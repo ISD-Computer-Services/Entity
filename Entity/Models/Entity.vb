@@ -1,4 +1,4 @@
-﻿Imports System.ComponentModel
+Imports System.ComponentModel
 Imports System.Globalization
 Imports System.Threading
 Imports System.Threading.Tasks
@@ -124,6 +124,14 @@ Namespace Models
     Public Interface IEntityCommandSoap(Of T As Class) : Inherits IEntityCommand
         Property Client As T
         Property SecurityToken As String
+    End Interface
+
+    Public Interface IEntityCommandMaximRepository(Of T As Entity) : Inherits IEntityCommand
+        Property CustomerAccountCode As String
+        Property DatabaseCatalogue As String
+        Property DatabasePassword As String
+        Property DatabaseServerPath As String
+        Property DatabaseUserId As String
     End Interface
 
     Public Interface IEntityCommandXml(Of T As Entity) : Inherits IEntityCommand
@@ -283,6 +291,17 @@ Namespace Models
     Public MustInherit Class EntityCommandSoap : Inherits EntityCommand
     End Class
 
+    Public MustInherit Class EntityCommandMaximRepository : Inherits EntityCommand
+#Region "<Constants>"
+        Public Const MaximDbSuffix = "_MaximPortalDB"
+#End Region
+#Region "<Methods>"
+        Public Shared Function GenerateMicrosoftSQLDatabaseConnectionString(Catalogue As String, ServerPath As String, UserId As String, Password As String) As String
+            Return "Server=" & ServerPath & ";uid=" & UserId & ";password=" & Password & ";database=" & Catalogue
+        End Function
+#End Region
+    End Class
+
     Public MustInherit Class EntityCommandLog : Inherits EntityCommandFile
 #Region "<Constants>"
         Public Const ObjectIdName = ""
@@ -346,4 +365,40 @@ Namespace Models.Xml
 #End Region
     End Class
 #End Region
+End Namespace
+
+Namespace Models.MaximCoreConnector
+    Public Class MaximCoreConnectorCommandException(Of T As Entity) : Inherits Exception
+#Region "<Variables>"
+        Const MessageTemplate As String = "The MaximCoreConnector experienced an issue while working with 'Entity' object {0}. " &
+            "The method with the issue is {1}. " &
+            "The arguments parsed into the method was {2}. " &
+            "The result returned was {3}."
+#End Region
+
+#Region "<Properties>"
+        Public Property Entity As T
+        Public Property MethodBase As MethodBase
+#End Region
+
+#Region "<Constructors>"
+        Public Sub New(Entity As T, MethodBase As MethodBase, Arguments As String, Result As String)
+            MyBase.New(String.Format(MessageTemplate, Entity.ToString(), MethodBase.Name, Arguments, Result))
+            Me.Entity = Entity
+            Me.MethodBase = MethodBase
+        End Sub
+
+        Public Sub New(Entity As T, MethodBase As MethodBase, Message As String)
+            MyBase.New(Message)
+            Me.Entity = Entity
+            Me.MethodBase = MethodBase
+        End Sub
+
+        Public Sub New(Entity As T, MethodBase As MethodBase, Message As String, InnerException As Exception)
+            MyBase.New(Message, InnerException)
+            Me.Entity = Entity
+            Me.MethodBase = MethodBase
+        End Sub
+#End Region
+    End Class
 End Namespace
